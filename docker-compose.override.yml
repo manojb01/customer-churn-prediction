@@ -1,0 +1,91 @@
+x-airflow-volumes: &airflow-volumes
+  - mlflow-artifacts:/mlflow-artifacts
+  - ./data:/usr/local/airflow/data:ro
+
+services:
+  scheduler:
+    volumes: *airflow-volumes
+
+  dag-processor:
+    volumes: *airflow-volumes
+
+  triggerer:
+    volumes: *airflow-volumes
+
+  streamlit:
+    image: python:3.11-slim
+    platform: linux/arm64
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5001
+      - MLFLOW_MODEL_NAME=customer_churn_model
+      - PYTHONPATH=/usr/local/airflow
+    command: >
+      bash -c "pip install --no-cache-dir streamlit mlflow requests pandas joblib scikit-learn==1.3.2 pyyaml imbalanced-learn==0.11.0 xgboost numpy scipy matplotlib seaborn optuna dill shap openpyxl &&
+      streamlit run /usr/local/airflow/streamlit_app.py --server.port=8501 --server.address=0.0.0.0"
+    volumes:
+      - ./app/ui/streamlit_app.py:/usr/local/airflow/streamlit_app.py:ro
+      - ./models:/usr/local/airflow/models:ro
+      - ./data_validation:/usr/local/airflow/data_validation:ro
+      - ./utils:/usr/local/airflow/utils:ro
+      - ./configs:/usr/local/airflow/configs:ro
+    ports:
+      - '8501:8501'
+    depends_on:
+      - mlflow
+    networks:
+      - airflow
+    restart: unless-stopped
+
+  mlflow:
+    image: python:3.11-slim
+    platform: linux/arm64
+    environment:
+      - GIT_PYTHON_REFRESH=quiet
+      - MLFLOW_ARTIFACT_UPLOAD_DOWNLOAD_TIMEOUT=600
+      - POSTGRES_USER=${POSTGRES_USER:-mlflow}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mlflow}
+      - POSTGRES_DB=${POSTGRES_DB:-mlflow}
+    command: >
+      bash -c "pip install mlflow==3.6.0 psycopg2-binary boto3 &&
+      mkdir -p /mlflow-artifacts &&
+      chmod -R 777 /mlflow-artifacts &&
+      mlflow server --host 0.0.0.0 --port 5001
+      --backend-store-uri postgresql://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@mlflow-db:5432/$${POSTGRES_DB}
+      --default-artifact-root /mlflow-artifacts
+      --serve-artifacts
+      --allowed-hosts '*'
+      "
+    volumes:
+      - mlflow-artifacts:/mlflow-artifacts
+    ports:
+      - '5001:5001'
+    depends_on:
+      mlflow-db:
+        condition: service_healthy
+    networks:
+      - airflow
+    restart: unless-stopped
+
+  mlflow-db:
+    image: postgres:16-alpine
+    platform: linux/arm64
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-mlflow}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mlflow}
+      - POSTGRES_DB=${POSTGRES_DB:-mlflow}
+    volumes:
+      - mlflow-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", 'pg_isready', '-U', 'mlflow']
+      interval: 5s
+      retries: 5
+    networks:
+      - airflow
+    restart: unless-stopped
+
+volumes:
+  mlflow-db-volume:
+  mlflow-artifacts:
+
+networks:
+  airflow:

@@ -1,0 +1,11 @@
+CustomerID,Tenure,CityTier,WarehouseToHome,HourSpendOnApp,NumberOfDeviceRegistered,SatisfactionScore,NumberOfAddress,Complain,OrderAmountHikeFromlastYear,CouponUsed,OrderCount,DaySinceLastOrder,CashbackAmount,PreferredLoginDevice,PreferredPaymentMode,Gender,PreferedOrderCat,MaritalStatus
+3001,1,3,40.0,0.1,1,1.0,9,1,0.0,0,1,100,1.0,Phone,Cash on Delivery,Male,Others,Single
+3002,2,3,35.0,0.3,1,1.0,7,1,1.0,0,1,80,3.0,Computer,Cash on Delivery,Female,Grocery,Divorced
+3003,4,3,30.0,0.8,1,2.0,5,1,2.0,1,2,60,10.0,Mobile Phone,Debit Card,Male,Others,Single
+3004,8,2,20.0,1.5,2,3.0,4,1,5.0,2,4,40,30.0,Mobile Phone,Debit Card,Female,Fashion,Single
+3005,12,2,15.0,2.0,2,3.0,3,0,8.0,3,6,20,60.0,Mobile Phone,Credit Card,Male,Fashion,Married
+3006,18,2,10.0,3.0,3,4.0,2,0,12.0,6,10,10,120.0,Mobile Phone,UPI,Female,Mobile Phone,Married
+3007,24,1,8.0,3.5,3,4.0,1,0,15.0,8,12,5,180.0,Computer,Credit Card,Male,Laptop & Accessory,Married
+3008,30,1,6.0,4.0,4,5.0,1,0,20.0,12,15,2,250.0,Mobile Phone,Credit Card,Female,Fashion,Married
+3009,36,1,5.0,4.5,5,5.0,1,0,25.0,15,20,1,350.0,Computer,Credit Card,Male,Laptop & Accessory,Married
+3010,48,1,4.0,5.0,5,5.0,1,0,30.0,20,25,1,500.0,Mobile Phone,Credit Card,Female,Mobile Phone,Married

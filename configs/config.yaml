@@ -1,0 +1,239 @@
+# Customer Churn Prediction Configuration
+# This file contains all configuration settings for the churn prediction pipeline
+
+project:
+  name: "customer_churn_prediction"
+  version: "2.0.0"
+  description: "Production-ready customer churn prediction system using Airflow 3.0"
+
+environment: ${ENVIRONMENT:dev}  # dev, staging, prod
+
+data:
+  source:
+    type: "excel"  # excel, postgres, s3
+    excel_path: "data/raw/E Commerce Dataset.xlsx"
+    sheet_name: "E Comm"
+    
+  database:
+    host: ${DB_HOST:localhost}
+    port: ${DB_PORT:5432}
+    database: ${DB_NAME:churn_db}
+    schema: ${DB_SCHEMA:public}
+    table: ${DB_TABLE:customer_data}
+    
+  paths:
+    raw: "data/raw"
+    processed: "data/processed"
+    predictions: "data/predictions"
+    
+  validation:
+    check_nulls: true
+    check_duplicates: true
+    check_data_types: true
+    null_threshold: 0.3  # Max allowed null percentage
+    
+  validation_rules:
+    null_threshold: 0.3
+    duplicate_threshold: 0.05
+    min_samples: 100
+    target_balance_threshold: 0.05
+    outlier_threshold: 3.0
+    
+  expected_columns:
+    - "CustomerID"
+    - "Tenure" 
+    - "PreferredLoginDevice"
+    - "CityTier"
+    - "WarehouseToHome"
+    - "PreferredPaymentMode"
+    - "Gender"
+    - "HourSpendOnApp"
+    - "NumberOfDeviceRegistered"
+    - "PreferedOrderCat"
+    - "SatisfactionScore"
+    - "MaritalStatus"
+    - "NumberOfAddress"
+    - "Complain"
+    - "OrderAmountHikeFromlastYear"
+    - "CouponUsed"
+    - "OrderCount"
+    - "DaySinceLastOrder"
+    - "CashbackAmount"
+    - "Churn"
+    
+  numerical_columns:
+    - "Tenure"
+    - "CityTier" 
+    - "WarehouseToHome"
+    - "HourSpendOnApp"
+    - "NumberOfDeviceRegistered"
+    - "SatisfactionScore"
+    - "NumberOfAddress"
+    - "Complain"
+    - "OrderAmountHikeFromlastYear"
+    - "CouponUsed"
+    - "OrderCount"
+    - "DaySinceLastOrder"
+    - "CashbackAmount"
+    
+  categorical_columns:
+    - "PreferredLoginDevice"
+    - "PreferredPaymentMode"
+    - "Gender"
+    - "PreferedOrderCat"
+    - "MaritalStatus"
+    
+features:
+  numerical:
+    - Tenure
+    - CityTier
+    - WarehouseToHome
+    - HourSpendOnApp
+    - NumberOfDeviceRegistered
+    - SatisfactionScore
+    - NumberOfAddress
+    - Complain
+    - OrderAmountHikeFromlastYear
+    - CouponUsed
+    - OrderCount
+    - DaySinceLastOrder
+    - CashbackAmount
+    
+  categorical:
+    - PreferredLoginDevice
+    - PreferredPaymentMode
+    - Gender
+    - PreferedOrderCat
+    - MaritalStatus
+    
+  target: "Churn"
+  
+  engineering:
+    create_interaction_features: true
+    create_ratio_features: true
+    create_aggregation_features: true
+    handle_missing:
+      strategy: "smart"  # smart, drop, mean, median, mode
+      numerical_method: "median"
+      categorical_method: "mode"
+    
+model:
+  algorithms:
+    - name: "random_forest"
+      enabled: true
+      calibrate_probabilities: true  # Improves probability estimates
+      params:
+        n_estimators: [100, 200, 300]
+        max_depth: [10, 20, null]
+        min_samples_split: [2, 5, 10]
+        min_samples_leaf: [1, 2, 4]
+        class_weight: ["balanced", null]
+        
+    - name: "xgboost"
+      enabled: false  # Temporarily disabled due to installation issues
+      params:
+        n_estimators: [100, 200, 300]
+        max_depth: [3, 5, 7]
+        learning_rate: [0.01, 0.1, 0.3]
+        subsample: [0.8, 1.0]
+        colsample_bytree: [0.8, 1.0]
+        scale_pos_weight: [1, 5]  # Handle imbalanced data
+        
+    - name: "logistic_regression"
+      enabled: true
+      params:
+        penalty: ["l1", "l2"]
+        C: [0.001, 0.01, 0.1, 1, 10]
+        solver: ["liblinear", "saga"]
+        class_weight: ["balanced", null]
+        
+  training:
+    test_size: 0.2
+    validation_size: 0.2
+    random_state: 42
+    cv_folds: 5
+    scoring_metric: "roc_auc"  # Primary metric
+    additional_metrics:
+      - "accuracy"
+      - "precision"
+      - "recall"
+      - "f1"
+    
+  optimization:
+    search_type: "bayesian"  # grid, random, bayesian
+    n_iterations: 50
+    n_jobs: -1
+    
+mlflow:
+  tracking_uri: ${MLFLOW_TRACKING_URI:http://mlflow:5001}
+  experiment_name: "customer_churn_prediction"
+  artifact_location: "mlruns"
+  model_registry:
+    enabled: true
+    stage_transitions:
+      - from: "None"
+        to: "Staging"
+        criteria:
+          metric: "roc_auc"
+          threshold: 0.85
+      - from: "Staging"
+        to: "Production"
+        criteria:
+          metric: "roc_auc"
+          threshold: 0.88
+          
+monitoring:
+  data_drift:
+    enabled: true
+    method: "ks_test"  # ks_test, chi2, psi
+    threshold: 0.1
+    
+  model_performance:
+    enabled: true
+    alert_thresholds:
+      roc_auc_drop: 0.05
+      precision_drop: 0.1
+      recall_drop: 0.1
+      
+  alerts:
+    email:
+      enabled: ${ENABLE_EMAIL_ALERTS:false}
+      smtp_host: ${SMTP_HOST:smtp.gmail.com}
+      smtp_port: ${SMTP_PORT:587}
+      from_email: ${ALERT_FROM_EMAIL}
+      to_emails: ${ALERT_TO_EMAILS}
+    slack:
+      enabled: ${ENABLE_SLACK_ALERTS:false}
+      webhook_url: ${SLACK_WEBHOOK_URL}
+      
+airflow:
+  dag:
+    dag_id: "customer_churn_prediction"
+    schedule: "@weekly"
+    start_date: "2024-01-01"
+    catchup: false
+    max_active_runs: 1
+    tags: ["ml", "churn", "production"]
+    
+  tasks:
+    default_retries: 2
+    retry_delay_minutes: 5
+    email_on_failure: true
+    email_on_retry: false
+    
+  resources:
+    default_pool: "default_pool"
+    ml_pool: "ml_pool"
+    ml_pool_slots: 4
+    
+logging:
+  level: ${LOG_LEVEL:INFO}
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/churn_prediction.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+  
+testing:
+  data_samples: 1000
+  test_split: 0.1
+  random_state: 42

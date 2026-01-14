@@ -1,0 +1,109 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Airflow
+.airflow/
+logs/
+airflow-webserver.pid
+airflow-scheduler.pid
+
+# Astro
+.astro/
+!.astro/config.yaml
+!.astro/test_dag_integrity_default.py
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Data
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+*.csv
+*.xlsx
+*.xls
+!mixed_customers.csv
+
+# Models
+models/production/*
+!models/production/.gitkeep
+models/staging/*
+!models/staging/.gitkeep
+models/registry.json
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.pkl
+*.joblib
+
+# Documentation build
+docs/_build/
+site/
+
+# OS
+Thumbs.db
+.DS_Store
+*.DS_Store
+
+# Backup files
+*.bak
+*.backup
+*~
